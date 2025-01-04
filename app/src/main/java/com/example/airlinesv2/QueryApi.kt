@@ -49,6 +49,8 @@ suspend fun queryApi(context: Context): Boolean {
 
                 val test = appendix
 
+                //testing lang
+
                 if (!flightStatuses.isNullOrEmpty()) {
                     val flightId = getFlightId(flightStatuses)
                     val fsCode = getFsCode(flightStatuses)
