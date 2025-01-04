@@ -182,10 +182,10 @@ class MainActivity : AppCompatActivity() {
                                             }
 
                                             val db = DataBaseHandler(context)
-                                            var code = extractedData.flightIata
+                                            //var code = extractedData.flightIata
                                            val dataTest = db.getDataByFlightCode(extractedData)
                                            test1.text = "flightID: ${dataTest.flightIds} FlightCode: ${dataTest.departureAirportFsCodes}"
-                                            test2.text = "flightCode: ${dataTest.flightCodes} flightDate: ${dataTest.departureDates}"
+                                            test2.text = "flightCode: ${dataTest.fsNumber} flightDate: ${dataTest.departureDates}"
                                             delay(3000)
                                             scanningPaused = false
                                             clearDetails()
@@ -310,8 +310,7 @@ class MainActivity : AppCompatActivity() {
                 airlineCode = airlineCode,
                 flightNumber = flightNumber,
                 flightDate = flightDate,
-                seatNumber = seatNumber,
-                flightIata = flightIata
+                seatNumber = seatNumber
             )
         } catch (e: Exception) {
             validationUIResponse(false)
@@ -323,8 +322,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private fun populateBoardingPass(data: BarcodeData) {
         val flightIata = findViewById<TextView>(R.id.flightIata)
-        flightIata.text = "Flight IATA: ${data.flightIata}"
-
+        flightIata.text = "Flight IATA: ${data.airlineCode}${data.flightNumber}"
         val formattedFlightDate =
             data.flightDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
 
@@ -385,11 +383,4 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-data class BarcodeData(
-    val passengerName: String,
-    val airlineCode: String,
-    val flightNumber: String,
-    val flightDate: LocalDate,
-    val seatNumber: String,
-    val flightIata: String
-)
+

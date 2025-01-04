@@ -33,14 +33,21 @@ suspend fun queryApi(context: Context): Boolean {
             isUpdated = isTimeWithinLast30Minutes(localDateTime)
         }
 
-        if (!isUpdated) {
+        if (isUpdated) {
             showCustomToast(context, "UPDATING PLEASE WAIT")
 
             val jsonResponses = getApiAsync()
+            //
+            db.deleteFlightStatuses()
+            db.deleteDataLogs()
+
 
             jsonResponses.forEach { jsonResponse ->
                 val jsonObject = jsonResponse?.let { Json.parseToJsonElement(it).jsonObject }
                 val flightStatuses = jsonObject?.get("flightStatuses")?.jsonArray
+                val appendix = getFsCodes(jsonObject)
+
+                val test = appendix
 
                 if (!flightStatuses.isNullOrEmpty()) {
                     val flightId = getFlightId(flightStatuses)
@@ -53,9 +60,27 @@ suspend fun queryApi(context: Context): Boolean {
                     val flightIdInt = flightId.mapNotNull { it.toIntOrNull() }
 
                     val flightCodesMap = flightId.map { flightId ->
+
                         val carrierFsCode = fsCode[flightId] ?: ""
+                        var code =  carrierFsCode
+                        var fixFsCode = ""
+                        if (code.contains("*")){
+                            println("contain * :")
+                            fixFsCode = code.replace("*", "")
+                        }
+                        else{
+                            fixFsCode = code
+                        }
+                        val testing = fixFsCode
+
                         val flightNumber = flightNumber[flightId] ?: ""
-                        "$carrierFsCode$flightNumber"
+                        //"$carrierFsCode$flightNumber"
+                        "${fixFsCode}"
+
+                    }
+
+                    val fsNumberMap = flightId.map { flightId ->
+                        flightNumber[flightId] ?: ""
                     }
 
                     val airportFsCodeMap = flightId.map { flightId ->
@@ -66,12 +91,13 @@ suspend fun queryApi(context: Context): Boolean {
                         departureDt[flightId] ?: ""
                     }
 
-                    val currentLocalDate = LocalDate.now()
+                    val currentLocalDate = LocalDateTime.now()
                     val queryDateList = List(flightIdInt.size) { currentLocalDate }
 
                     val dbFlights = Flights(
                         flightIds = flightIdInt,
-                        flightCodes = flightCodesMap,
+                        fsCode = flightCodesMap,
+                        fsNumber = fsNumberMap,
                         departureAirportFsCodes = airportFsCodeMap,
                         departureDates = departureDtMap,
                         queryDate = queryDateList
@@ -92,6 +118,7 @@ suspend fun queryApi(context: Context): Boolean {
 
                     db.insertFlights(dbFlights)
                     db.insertDataLogs(dbDataLogs)
+                    //db.insertFsIataCode(db)
 
                 } else {
                     println("No flight statuses found in the response.") // Log the absence of flight statuses
@@ -160,6 +187,8 @@ suspend fun getApiAsync(): List<String?> {
     return responses // Return the list of responses for both dates
 }
 
+//The function (isTimeWithinLast30Minutes) is designed to determine whether a given ---
+//LocalDateTime instance (referred to as dateTime) falls within the last 30 minutes from the current time.
 fun isTimeWithinLast30Minutes(dateTime: LocalDateTime): Boolean {
     // Get the current time
     val currentTime = LocalDateTime.now()
@@ -171,6 +200,7 @@ fun isTimeWithinLast30Minutes(dateTime: LocalDateTime): Boolean {
     return !dateTime.isBefore(thirtyMinutesAgo)
 }
 
+//blinking effect
     fun showCustomToast(context: Context, message: String) {
 
         // Inflate the custom layout
