@@ -183,9 +183,11 @@ class MainActivity : AppCompatActivity() {
 
                                             val db = DataBaseHandler(context)
                                             //var code = extractedData.flightIata
-                                           val dataTest = db.getDataByFlightCode(extractedData)
-                                           test1.text = "flightID: ${dataTest.flightIds} FlightCode: ${dataTest.departureAirportFsCodes}"
-                                            test2.text = "flightCode: ${dataTest.fsNumber} flightDate: ${dataTest.departureDates}"
+                                           val dbDataFlight = db.getDataByFlightCode(extractedData)
+                                           test1.text = "flightID: ${dbDataFlight.flightIds} \n" +
+                                                   "FlightCode: ${dbDataFlight.fsCode} \n" +
+                                                   "FlightNumber: ${dbDataFlight.fsNumber} \n" +
+                                                   "DepartureDate: ${dbDataFlight.departureDates}"
                                             delay(3000)
                                             scanningPaused = false
                                             clearDetails()
@@ -229,11 +231,11 @@ class MainActivity : AppCompatActivity() {
             // Get the current date
             val currentDate = LocalDate.now()
 
-            // Compare only the date part of the flightDate
-            if (barcode.flightDate.isBefore(currentDate)) {
-                validationUIResponse(false)
-                return false
-            }
+             //Compare only the date part of the flightDate
+           // if (barcode.flightDate.isBefore(currentDate)) {
+             //   validationUIResponse(false)
+              //  return false
+            //}
 
             if (barcode.seatNumber.isNullOrEmpty()) {
                 validationUIResponse(false)

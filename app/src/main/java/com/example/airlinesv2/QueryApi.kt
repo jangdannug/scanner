@@ -40,6 +40,8 @@ suspend fun queryApi(context: Context): Boolean {
             //
             db.deleteFlightStatuses()
             db.deleteDataLogs()
+            db.deleteAirlines()
+
 
 
             jsonResponses.forEach { jsonResponse ->
@@ -49,12 +51,17 @@ suspend fun queryApi(context: Context): Boolean {
 
                 val test = appendix
 
+
+
+
+
                 if (!flightStatuses.isNullOrEmpty()) {
                     val flightId = getFlightId(flightStatuses)
                     val fsCode = getFsCode(flightStatuses)
                     val flightNumber = getFlightNumber(flightStatuses)
                     val airportFsCode = getAirPortFsCode(flightStatuses)
                     val departureDt = getLatestDepartureDt(flightStatuses)
+
 
                     // Mapping
                     val flightIdInt = flightId.mapNotNull { it.toIntOrNull() }
@@ -113,12 +120,32 @@ suspend fun queryApi(context: Context): Boolean {
                         execType = execType
                     )
 
+
+                    if (!appendix.isNullOrEmpty()) {
+
+                        val dbAirlinesList = getFsCodes(jsonObject)
+
+                        val fsCodes = dbAirlinesList.map { it.fsCodes } // Assuming fsCode is a property of DbAirlines
+                        val iataCode = dbAirlinesList.map { it.iataCode } // Assuming iataCode is a property of DbAirlines
+
+                        val dbAirlines = DbAirlines(
+                            fsCodes = fsCodes.toString(),
+                            iataCode = iataCode.toString()
+                        )
+
+
+                    }
+
                     // Uncomment this line if you want to delete the database
                     // db.deleteDatabase(context)
 
                     db.insertFlights(dbFlights)
                     db.insertDataLogs(dbDataLogs)
-                    //db.insertFsIataCode(db)
+
+                    if (!appendix.isNullOrEmpty()) {
+                        val dbAirlinesList = getFsCodes(jsonObject)
+                        db.insertAirlines(dbAirlinesList)
+                    }
 
                 } else {
                     println("No flight statuses found in the response.") // Log the absence of flight statuses
@@ -189,18 +216,20 @@ suspend fun getApiAsync(): List<String?> {
 
 //The function (isTimeWithinLast30Minutes) is designed to determine whether a given ---
 //LocalDateTime instance (referred to as dateTime) falls within the last 30 minutes from the current time.
+
 fun isTimeWithinLast30Minutes(dateTime: LocalDateTime): Boolean {
     // Get the current time
     val currentTime = LocalDateTime.now()
 
     // Calculate the time 30 minutes ago
-    val thirtyMinutesAgo = currentTime.minusMinutes(30)
+    val thirtyMinutesAgo = currentTime.minusMinutes(60)
 
     // Check if the given dateTime is more than 30 minutes in the past
     return !dateTime.isBefore(thirtyMinutesAgo)
 }
 
 //blinking effect
+
     fun showCustomToast(context: Context, message: String) {
 
         // Inflate the custom layout

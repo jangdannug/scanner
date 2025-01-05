@@ -60,11 +60,11 @@ class DbDataLogs{
     }
 }
 
-class DbFsIataCode{
-    var fsCodes:String?
-    var iataCode :String?
+class DbAirlines{
+    var fsCodes:String
+    var iataCode :String
     constructor(
-        fsCodes:String?, iataCode:String?
+        fsCodes:String, iataCode:String
     ){
         this.fsCodes = fsCodes
         this.iataCode = iataCode

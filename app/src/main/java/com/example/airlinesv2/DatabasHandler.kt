@@ -26,9 +26,9 @@ const val COL_executeDt = "executeDt"
 const val COL_dataSize = "dataSize"
 const val COL_execType = "execType"
 
-const val TABLE_FsIataCode = "FsIataCode"
-const val COL_FsCodes = "FsCodes"
-const val COL_IataCodes = "IataCodes"
+const val TABLE_Airlines = "Airlines"
+const val COL_fs = "fs"
+const val COL_iata = "iata"
 
 
 class DataBaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,null,1) {
@@ -58,18 +58,18 @@ class DataBaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
 
         db?.execSQL(createTableDataLogs)
 
-        //Create FsIataCode table
-        val createTableFsIataCodes = "CREATE TABLE $TABLE_FsIataCode (" +
-                "$COL_FsCodes TEXT," +
-                "$COL_IataCodes TEXT)"
+        //Create Appendix table
+        val createTableTableAppendix = "CREATE TABLE $TABLE_Airlines (" +
+                "$COL_fs TEXT," +
+                "$COL_iata TEXT)"
 
-        db?.execSQL(createTableFsIataCodes)
+        db?.execSQL(createTableTableAppendix)
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_FlightStatuses")  // Drop the existing table if it exists
         db?.execSQL("DROP TABLE IF EXISTS $TABLE_dataLogs")  // Drop another table if it exists
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_FsIataCode")  // Drop another table if it exists
+        db?.execSQL("DROP TABLE IF EXISTS $TABLE_Airlines")  // Drop another table if it exists
         onCreate(db)  // Recreate the tables as defined in the onCreate method
     }
 
@@ -163,7 +163,68 @@ class DataBaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
+    @SuppressLint("Range")
+    fun insertAirlines(dbAirlinesList: List<DbAirlines>) {
+        val db = this.writableDatabase
+        db.beginTransaction()
 
+        try {
+            for (dbAirlines in dbAirlinesList) {
+                val cursor = db.query(TABLE_Airlines, null, "${COL_fs} = ?", arrayOf(dbAirlines.fsCodes), null,null,null)
+                if (cursor != null){
+                    if (cursor.count > 0){
+                        cursor.moveToFirst()
+                        val existingIata = cursor.getString(cursor.getColumnIndex(COL_iata))
+                        if(existingIata != dbAirlines.iataCode) {
+                            val values = ContentValues().apply {
+                                put(COL_iata, dbAirlines.iataCode)
+                            }
+                            val rowsAffected = db.update(
+                                TABLE_Airlines,
+                                values,
+                                "${COL_fs}",
+                                arrayOf(dbAirlines.fsCodes)
+                            )
+                            if (rowsAffected > 0) {
+                                Log.d(
+                                    "DB_INSERT",
+                                    "Appendix data inserted successfully with row ID: "
+                                )
+                            } else {
+                                Log.e("DB_INSERT", "Failed to insert appendix data for fsCode: ")
+                            }
+                        }
+                        else{
+                            Log.d(
+                                "DB_INSERT",
+                                "No Change "
+                            )
+                        }
+                    }
+                    else{
+                        val values = ContentValues().apply {
+                            put(COL_fs, dbAirlines.fsCodes)
+                            put(COL_iata, dbAirlines.iataCode)
+                        }
+                        val newRowId = db.insert(TABLE_Airlines, null, values)
+                        if (newRowId != -1L) {
+                            Log.d("DB_INSERT", "Appendix data inserted successfully with row ID: $newRowId")
+                        } else {
+                            Log.e("DB_INSERT", "Failed to insert appendix data for fsCode: ${dbAirlines.fsCodes}")
+                        }
+                    }
+                    cursor.close()
+                }
+            }
+
+            db.setTransactionSuccessful()
+        } catch (e: Exception) {
+            Log.e("DB_ERROR", "Error inserting appendix data", e)
+        } finally {
+            db.endTransaction()
+            db.close()
+        }
+    }
 
 
 
@@ -191,8 +252,22 @@ class DataBaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
             val query = "SELECT * FROM $TABLE_FlightStatuses WHERE $COL_FsNumber = ?"
             var cursor: Cursor? = null
 
+            var flightNumber = barcodeData.flightNumber
+
+            if (flightNumber.startsWith("000")){
+                flightNumber = flightNumber.substring(3)
+            }
+            else if (flightNumber.startsWith("00")){
+                flightNumber = flightNumber.substring(2)
+            }
+            else if (flightNumber.startsWith("0")){
+                flightNumber = flightNumber.substring(1)
+            }
+
+
             try {
-                cursor = db.rawQuery(query, arrayOf(barcodeData.flightNumber))
+                cursor = db.rawQuery(query, arrayOf(flightNumber))
+
 
                 val currentDateTime = LocalDateTime.now() // Get current date and time
                 var preferredFlight: DbFlight? = null
@@ -341,6 +416,21 @@ class DataBaseHandler(context: Context) : SQLiteOpenHelper(context, DATABASE_NAM
         }
     }
 
+    fun deleteAirlines() {
+        val db = this.writableDatabase
+        try {
+            db.beginTransaction()
+            db.execSQL("DELETE from ${TABLE_Airlines}")
+            db.setTransactionSuccessful()
+        }
+        catch (e: Exception){
+            Log.e ("deleteDataLogs", "error during deleteAirlines")
+        }
+        finally {
+            db.endTransaction()
+            db.close()
+        }
+    }
 
 
 

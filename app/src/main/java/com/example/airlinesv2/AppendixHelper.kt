@@ -6,7 +6,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-fun getFsCodes(jsonData: JsonObject?): List<DbFsIataCode> {
+fun getFsCodes(jsonData: JsonObject?): List<DbAirlines> {
 
     val appendix = jsonData?.get("appendix")?.jsonObject
     val airlines: JsonArray? = if (appendix != null && appendix.containsKey("airlines")){
@@ -16,7 +16,7 @@ fun getFsCodes(jsonData: JsonObject?): List<DbFsIataCode> {
         null
     }
 
-    val dbfsCodeList = mutableListOf <DbFsIataCode> ()
+    val dbfsCodeList = mutableListOf <DbAirlines> ()
     if (airlines != null){
         for (airline in airlines){
             val airlineObject = airline.jsonObject
@@ -24,7 +24,7 @@ fun getFsCodes(jsonData: JsonObject?): List<DbFsIataCode> {
             val iata = airlineObject ["iata"]?.jsonPrimitive?.content?.replace("*", "")
 
             if (!fs.isNullOrEmpty()  && !iata.isNullOrEmpty()){
-                dbfsCodeList.add(DbFsIataCode(fs, iata))
+                dbfsCodeList.add(DbAirlines(fs, iata))
             }
         }
 
